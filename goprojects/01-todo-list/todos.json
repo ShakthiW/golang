@@ -1,0 +1,26 @@
+[
+  {
+    "Title": "Buy groceries",
+    "Completed": true,
+    "CreatedAt": "2025-07-13T18:48:03.022651+05:30",
+    "CompletedAt": "2025-07-13T19:02:42.321307+05:30"
+  },
+  {
+    "Title": "Use a new phone",
+    "Completed": true,
+    "CreatedAt": "2025-07-13T18:48:03.022651+05:30",
+    "CompletedAt": "2025-07-13T19:04:24.121846+05:30"
+  },
+  {
+    "Title": "Buy a new laptop",
+    "Completed": false,
+    "CreatedAt": "2025-07-13T18:48:03.022651+05:30",
+    "CompletedAt": null
+  },
+  {
+    "Title": "Go for a walk",
+    "Completed": false,
+    "CreatedAt": "2025-07-13T19:03:32.541258+05:30",
+    "CompletedAt": null
+  }
+]
