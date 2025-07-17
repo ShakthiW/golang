@@ -1,8 +1,8 @@
 package application
 
 import (
-	"orderapi/handler"
 	"net/http"
+	"orderapi/handler"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
