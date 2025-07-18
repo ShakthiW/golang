@@ -31,22 +31,22 @@ func (r *RedisRepo) Insert(ctx context.Context, order model.Order) error {
 	res := txn.SetNX(ctx, key, string(data), 0)
 	if err := res.Err(); err != nil {
 		txn.Discard()
-		return fmt.Errorf("failed to set order: %w", err)
+		return fmt.Errorf("failed to set: %w", err)
 	}
 
 	if err := txn.SAdd(ctx, "orders", key).Err(); err != nil {
 		txn.Discard()
-		return fmt.Errorf("failed to add order to set: %w", err)
+		return fmt.Errorf("failed to add to orders set: %w", err)
 	}
 
 	if _, err := txn.Exec(ctx); err != nil {
-		return fmt.Errorf("failed to execute transaction: %w", err)
+		return fmt.Errorf("failed to exec: %w", err)
 	}
 
 	return nil
 }
 
-var ErrNotExist = errors.New("order does not found")
+var ErrNotExist = errors.New("order does not exist")
 
 func (r *RedisRepo) FindByID(ctx context.Context, id uint64) (model.Order, error) {
 	key := orderIDKey(id)
@@ -55,7 +55,7 @@ func (r *RedisRepo) FindByID(ctx context.Context, id uint64) (model.Order, error
 	if errors.Is(err, redis.Nil) {
 		return model.Order{}, ErrNotExist
 	} else if err != nil {
-		return model.Order{}, fmt.Errorf("failed to get order: %w", err)
+		return model.Order{}, fmt.Errorf("get order: %w", err)
 	}
 
 	var order model.Order
@@ -78,17 +78,18 @@ func (r *RedisRepo) DeleteByID(ctx context.Context, id uint64) error {
 		return ErrNotExist
 	} else if err != nil {
 		txn.Discard()
-		return fmt.Errorf("failed to delete order: %w", err)
+		return fmt.Errorf("get order: %w", err)
 	}
 
 	if err := txn.SRem(ctx, "orders", key).Err(); err != nil {
 		txn.Discard()
-		return fmt.Errorf("failed to remove order from set: %w", err)
+		return fmt.Errorf("failed to remove from orders set: %w", err)
 	}
 
 	if _, err := txn.Exec(ctx); err != nil {
-		return fmt.Errorf("failed to execute transaction: %w", err)
+		return fmt.Errorf("failed to exec: %w", err)
 	}
+
 	return nil
 }
 
@@ -104,15 +105,15 @@ func (r *RedisRepo) Update(ctx context.Context, order model.Order) error {
 	if errors.Is(err, redis.Nil) {
 		return ErrNotExist
 	} else if err != nil {
-		return fmt.Errorf("failed to update order: %w", err)
+		return fmt.Errorf("set order: %w", err)
 	}
 
 	return nil
 }
 
 type FindAllPage struct {
-	Size   uint
-	Offset uint
+	Size   uint64
+	Offset uint64
 }
 
 type FindResult struct {
@@ -121,12 +122,15 @@ type FindResult struct {
 }
 
 func (r *RedisRepo) FindAll(ctx context.Context, page FindAllPage) (FindResult, error) {
-	res := r.Client.SScan(ctx, "orders", uint64(page.Offset), "*", int64(page.Size))
+	res := r.Client.SScan(ctx, "orders", page.Offset, "*", int64(page.Size))
 
 	keys, cursor, err := res.Result()
 	if err != nil {
-		return FindResult{}, fmt.Errorf("failed to get order IDs: %w", err)
+		return FindResult{}, fmt.Errorf("failed to get order ids: %w", err)
 	}
+
+	fmt.Printf("Keys returned: %v\n", keys)
+	fmt.Printf("Cursor after SScan: %d\n", cursor)
 
 	if len(keys) == 0 {
 		return FindResult{
@@ -145,7 +149,7 @@ func (r *RedisRepo) FindAll(ctx context.Context, page FindAllPage) (FindResult, 
 		x := x.(string)
 		var order model.Order
 
-		err = json.Unmarshal([]byte(x), &order)
+		err := json.Unmarshal([]byte(x), &order)
 		if err != nil {
 			return FindResult{}, fmt.Errorf("failed to decode order json: %w", err)
 		}
